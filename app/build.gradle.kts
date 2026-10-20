@@ -104,11 +104,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // 仅在存在发布密钥时才绑定 release 签名；否则不绑定，AGP 会打包出未签名 APK，
-            // 不会因 ValidateSigningTask 找不到 keystore 而中断云端编译。
-            if (hasReleaseKeystore) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            // 无发布密钥时回退到 debug 签名（而非不签名），保证云端产出的 APK 可安装；
+            // 有发布密钥（本地 keystore.properties 或 CI secrets）才用 release 签名。
+            // 不再触发 ValidateSigningTask，也避免了"安装包没有签名文件"。
+            signingConfig = signingConfigs.getByName(if (hasReleaseKeystore) "release" else "debug")
             buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"$googleMapsApiKey\"")
         }
     }
