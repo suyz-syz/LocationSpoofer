@@ -104,7 +104,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            // 仅在存在发布密钥时才绑定 release 签名；否则不绑定，AGP 会打包出未签名 APK，
+            // 不会因 ValidateSigningTask 找不到 keystore 而中断云端编译。
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"$googleMapsApiKey\"")
         }
     }
