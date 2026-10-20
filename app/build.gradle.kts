@@ -32,7 +32,7 @@ android {
         applicationId = "com.vincenthzr.locationspoofer"
         testInstrumentationRunner = "com.vincenthzr.locationspoofer.SystemFilesInstrumentation"
         minSdk = 26
-        targetSdk = 37
+        targetSdk = 36
         versionCode = providers.gradleProperty("APP_VERSION_CODE").get().toInt()
         versionName = providers.gradleProperty("APP_VERSION_NAME").get()
 
