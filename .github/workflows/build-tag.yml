@@ -28,11 +28,13 @@ jobs:
           cache: gradle
 
       # 不要用默认 packages（会装已删除的 tools）
-      # 必须装 android-37 平台：项目 compileSdk = 37，装 34 会在编译期报 SDK 缺失。
-      - name: Setup Android SDK
+      # 不要在这里手动指定 platforms/build-tools：setup-android 自带的包目录常常滞后，
+      # 且 AGP 9.x 要求的 build-tools(≥36) 与 34.0.0 冲突。只做一件事：接受 license，
+      # 让 AGP 的 SDK 自动下载机制按 compileSdk=37 自动装好对应 platform + build-tools。
+      - name: Setup Android SDK (accept licenses only)
         uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools platforms;android-37 build-tools;34.0.0
+          cmdline-tools-version: latest
           log-accepted-android-sdk-licenses: true
 
       - name: Build APK

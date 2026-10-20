@@ -148,6 +148,15 @@ jobs:
           java-version: '17' # Gradle 需要 Java 17 进行编译
           cache: 'gradle'
 
+      - name: Setup Android SDK (accept licenses only)
+        if: steps.check_version.outputs.changed == 'true'
+        # 不要手动装 platforms/build-tools：AGP 9.x(compileSdk=37) 会按需自动下载，
+        # 这里只负责接受 license，避免平台目录滞后/版本冲突导致 Setup SDK 失败。
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: latest
+          log-accepted-android-sdk-licenses: true
+
       - name: Decode Keystore
         if: steps.check_version.outputs.changed == 'true'
         env:
