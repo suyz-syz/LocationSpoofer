@@ -38,31 +38,36 @@ jobs:
           # Ubuntu runner 已通过 ANDROID_HOME 暴露 SDK 根目录
           SDK_MANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           if [ ! -x "$SDK_MANAGER" ]; then
-            # 兜底：runner 没预装 cmdline-tools 时用 sdkmanager 所在目录探测
             SDK_MANAGER="$(command -v sdkmanager || true)"
           fi
           if [ -z "$SDK_MANAGER" ]; then
             echo "::error::sdkmanager 不存在，无法安装 Android SDK" && exit 1
           fi
 
-          # 自动接受全部 Android SDK 许可证
-          yes | "$SDK_MANAGER" --licenses >/dev/null 2>&1 || true
+          # 直接预写已接受的许可证哈希到 $ANDROID_HOME/licenses。
+          # 这是 AGP 触发 SDK 自动下载的前提，且不依赖 sdkmanager 交互式 --licenses 流程
+          # （该流程在 CI 无 TTY 时可能因 Broken pipe 提前退出、漏写许可证）。
+          mkdir -p "$ANDROID_HOME/licenses"
+          printf '%s\n' \
+            "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
+          printf '%s\n' \
+            "84831b9409646a918e30573bab4c9c91346d8abd" \
+            "504667f4c0de7af1a06de9f4b1727b84351f2910" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
 
-          # 用 Bash 数组写死版本，逐个传参给 sdkmanager，避免引号嵌套污染包名。
-          # 与项目 compileSdk=37 对齐：platforms;android-37；
-          # build-tools 用 36.0.0（AGP 9.3.1 最低要求 build-tools≥36，34 会报 too low）
+          # 只装基础包 + 与 compileSdk=36 对齐的包。
+          # platforms;android-36 / build-tools;36.0.0 是 AGP 9.3.1 支持且已发布的正式组件，
+          # 直接装死版本，最确定；许可证已通过上面预写哈希就绪。
           SDK_PACKAGES=(
             "platform-tools"
-            "platforms;android-37"
+            "platforms;android-36"
             "build-tools;36.0.0"
             "cmdline-tools;latest"
           )
 
-          # 安装指定 SDK 包
-          yes | "$SDK_MANAGER" "${SDK_PACKAGES[@]}" >/dev/null
+          yes | "$SDK_MANAGER" "${SDK_PACKAGES[@]}" >/dev/null 2>&1 || true
 
-          # 确认已装内容（便于排查）
-          "$SDK_MANAGER" --list_installed
+          # 确认已装内容（便于排查；个别 sdkmanager 版本不支持该参数可删掉本行）
+          "$SDK_MANAGER" --list_installed 2>/dev/null || true
 
       - name: Build APK
         run: |

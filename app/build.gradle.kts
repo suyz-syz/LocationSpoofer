@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.vincenthzr.locationspoofer"
-    compileSdk = 37
+    compileSdk = 36
 
     fun getLocalConfig(key: String): String? {
         val localYml = file("../local.yml")
