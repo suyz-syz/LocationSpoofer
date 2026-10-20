@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 必须把 v2.6.13 这个 tag 强制移动到「已修复签名逻辑」的提交上（见下方说明），
+      # 必须把 v2.6.13 这个 tag 强制移动到「已修复签名逻辑」的提交上，
       # 否则 checkout 到旧 tag 仍会用硬编码了作者本地密钥路径的旧代码，云端编译必挂。
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -27,15 +27,37 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      # 不要用默认 packages（会装已删除的 tools）
-      # 不要在这里手动指定 platforms/build-tools：setup-android 自带的包目录常常滞后，
-      # 且 AGP 9.x 要求的 build-tools(≥36) 与 34.0.0 冲突。只做一件事：接受 license，
-      # 让 AGP 的 SDK 自动下载机制按 compileSdk=37 自动装好对应 platform + build-tools。
-      - name: Setup Android SDK (accept licenses only)
-        uses: android-actions/setup-android@v3
-        with:
-          cmdline-tools-version: latest
-          log-accepted-android-sdk-licenses: true
+      # 弃用 android-actions/setup-android（其包目录会去找已被 Google 删除的旧版 tools 组件，
+      # 报 "Failed to find package 'tools'"）。改用 Ubuntu 自带的 ANDROID_HOME + 内置 sdkmanager，
+      # 通过原生 Shell 写死安装所需 SDK 组件并自动接受许可证。
+      - name: Set up Android SDK via native sdkmanager
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          # 写死版本，彻底避开第三方 action 的包目录解析 bug
+          # 与项目 compileSdk=37 对齐：装 platforms;android-37；
+          # build-tools 用 36.0.0（AGP 9.3.1 最低要求 build-tools≥36，34 会报 too low）
+          SDK_PACKAGES="platform-tools \"platforms;android-37\" \"build-tools;36.0.0\" \"cmdline-tools;latest\""
+
+          # Ubuntu runner 已通过 ANDROID_HOME 暴露 SDK 根目录
+          SDK_MANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDK_MANAGER" ]; then
+            # 兜底：runner 没预装 cmdline-tools 时用 sdkmanager 所在目录探测
+            SDK_MANAGER="$(command -v sdkmanager || true)"
+          fi
+          if [ -z "$SDK_MANAGER" ]; then
+            echo "::error::sdkmanager 不存在，无法安装 Android SDK" && exit 1
+          fi
+
+          # 自动接受全部 Android SDK 许可证
+          yes | "$SDK_MANAGER" --licenses >/dev/null 2>&1 || true
+
+          # 安装指定 SDK 包
+          yes | "$SDK_MANAGER" $SDK_PACKAGES >/dev/null
+
+          # 确认已装内容（便于排查）
+          "$SDK_MANAGER" --list_installed
 
       - name: Build APK
         run: |
