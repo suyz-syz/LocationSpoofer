@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.vincenthzr.locationspoofer.data"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26

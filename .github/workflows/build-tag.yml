@@ -54,12 +54,12 @@ jobs:
             "84831b9409646a918e30573bab4c9c91346d8abd" \
             "504667f4c0de7af1a06de9f4b1727b84351f2910" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
 
-          # 只装基础包 + 与 compileSdk=36 对齐的包。
-          # platforms;android-36 / build-tools;36.0.0 是 AGP 9.3.1 支持且已发布的正式组件，
-          # 直接装死版本，最确定；许可证已通过上面预写哈希就绪。
+          # 安装与 compileSdk=37 对齐的包。API 37 已发布（AGP 报错里明确指向 "37.1"），
+          # platforms;android-37 在 Google 官方仓库存在；用 Bash 数组传参（避免引号污染包名）
+          # + 上面预写的许可证哈希，即可正常拉取安装。
           SDK_PACKAGES=(
             "platform-tools"
-            "platforms;android-36"
+            "platforms;android-37"
             "build-tools;36.0.0"
             "cmdline-tools;latest"
           )

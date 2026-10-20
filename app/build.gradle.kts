@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.vincenthzr.locationspoofer"
-    compileSdk = 36
+    compileSdk = 37
 
     fun getLocalConfig(key: String): String? {
         val localYml = file("../local.yml")
@@ -32,7 +32,7 @@ android {
         applicationId = "com.vincenthzr.locationspoofer"
         testInstrumentationRunner = "com.vincenthzr.locationspoofer.SystemFilesInstrumentation"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = providers.gradleProperty("APP_VERSION_CODE").get().toInt()
         versionName = providers.gradleProperty("APP_VERSION_NAME").get()
 
