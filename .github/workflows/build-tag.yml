@@ -35,11 +35,6 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # 写死版本，彻底避开第三方 action 的包目录解析 bug
-          # 与项目 compileSdk=37 对齐：装 platforms;android-37；
-          # build-tools 用 36.0.0（AGP 9.3.1 最低要求 build-tools≥36，34 会报 too low）
-          SDK_PACKAGES="platform-tools \"platforms;android-37\" \"build-tools;36.0.0\" \"cmdline-tools;latest\""
-
           # Ubuntu runner 已通过 ANDROID_HOME 暴露 SDK 根目录
           SDK_MANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           if [ ! -x "$SDK_MANAGER" ]; then
@@ -53,8 +48,18 @@ jobs:
           # 自动接受全部 Android SDK 许可证
           yes | "$SDK_MANAGER" --licenses >/dev/null 2>&1 || true
 
+          # 用 Bash 数组写死版本，逐个传参给 sdkmanager，避免引号嵌套污染包名。
+          # 与项目 compileSdk=37 对齐：platforms;android-37；
+          # build-tools 用 36.0.0（AGP 9.3.1 最低要求 build-tools≥36，34 会报 too low）
+          SDK_PACKAGES=(
+            "platform-tools"
+            "platforms;android-37"
+            "build-tools;36.0.0"
+            "cmdline-tools;latest"
+          )
+
           # 安装指定 SDK 包
-          yes | "$SDK_MANAGER" $SDK_PACKAGES >/dev/null
+          yes | "$SDK_MANAGER" "${SDK_PACKAGES[@]}" >/dev/null
 
           # 确认已装内容（便于排查）
           "$SDK_MANAGER" --list_installed
